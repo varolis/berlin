@@ -22,7 +22,7 @@
       margin-bottom: 3vh;
     }
     .remain {
-      font-size: 3vw;
+      font-size: 6vw; /* Verdoppelte Schriftgröße */
       color: yellow;
       margin-top: 3vh;
       margin-bottom: 3vh;
@@ -72,7 +72,7 @@
     }
 
     async function fetchPrayerTimes() {
-      prayerTimes = []; // reset
+      prayerTimes = [];
       const dateStr = getDateStr();
       try {
         const res = await fetch("https://raw.githubusercontent.com/varolis/berlin/main/ezan.json");
@@ -119,7 +119,6 @@
       const now = new Date();
       document.getElementById("clock").textContent = now.toLocaleTimeString();
 
-      // verbleibende Zeit
       let nextIdx = prayerTimes.findIndex(pt => now < pt.time);
       let next = prayerTimes[nextIdx];
       if (!next) {
@@ -133,7 +132,6 @@
       const s = String(Math.floor(diff % 60)).padStart(2, '0');
       document.getElementById("remaining").textContent = `Kalan zaman: ${h}:${m}:${s}`;
 
-      // Highlight aktuelle Gebetszeit (letzter Wert, der kleiner oder gleich ist)
       const blocks = document.querySelectorAll(".prayer");
       blocks.forEach(b => b.classList.remove("active"));
       let currentIdx = -1;
@@ -156,15 +154,14 @@
     async function init() {
       await updateAll();
       setInterval(updateClock, 1000);
-      setInterval(updateTemperatureOnly, 10 * 60 * 1000); // alle 10 Minuten
+      setInterval(updateTemperatureOnly, 10 * 60 * 1000);
 
-      // Timer für tägliche Aktualisierung um 00:01:00
       const now = new Date();
       const nextReload = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0, 0);
       const timeout = nextReload - now;
       setTimeout(function reloadAtMidnight() {
         updateAll();
-        setInterval(updateAll, 86400000); // danach alle 24h
+        setInterval(updateAll, 86400000);
       }, timeout);
     }
 
