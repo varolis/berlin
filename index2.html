@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Gebetszeiten heute</title>
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background-color: black;
+      color: white;
+      font-family: sans-serif;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .time {
+      font-size: 12vw;
+      margin-bottom: 3vh;
+    }
+    .remain {
+      font-size: 6vw;
+      color: yellow;
+      margin-top: 3vh;
+      margin-bottom: 3vh;
+    }
+    .date {
+      font-size: 2.5vw;
+      margin-top: 3vh;
+    }
+    .prayer-times {
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: nowrap;
+      gap: 1vw;
+      max-width: 95vw;
+      width: 100%;
+    }
+    .prayer {
+      border: 1px solid white;
+      padding: 2vw;
+      flex-grow: 1;
+      font-size: 3.5vw;
+      box-sizing: border-box;
+    }
+    .active {
+      background-color: yellow;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+  <div class="time" id="clock"></div>
+  <div class="prayer-times" id="prayerTimes"></div>
+  <div class="remain" id="remaining"></div>
+  <div class="date" id="date"></div>
+
+  <script>
+    const prayerLabels = ["İmsak", "Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
+    const prayerKeys = ["Imsak", "Gunes", "Ogle", "Ikindi", "Aksam", "Yatsi"];
+    let prayerTimes = [];
+
+    function getDateStr() {
+      const d = new Date();
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const year = d.getFullYear();
+      return `${day}.${month}.${year}`;
+    }
+
+    async function fetchPrayerTimes() {
+      prayerTimes = [];
+      try {
+        const res = await fetch("https://ezanvakti.emushaf.net/vakitler/11002");
+        const data = await res.json();
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('tr-TR'); // e.g. 15.05.2025
+        const entry = data.find(d => d.MiladiTarihKisa === dateStr);
+        if (!entry) return alert("Keine Daten für heute gefunden.");
+
+        const container = document.getElementById("prayerTimes");
+        container.innerHTML = "";
+
+        prayerLabels.forEach((label, i) => {
+          const timeStr = entry[prayerKeys[i]];
+          const [hh, mm] = timeStr.split(":").map(Number);
+          const t = new Date();
+          t.setHours(hh, mm, 0, 0);
+          prayerTimes.push({ label, time: t, str: timeStr });
+
+          const div = document.createElement("div");
+          div.className = "prayer";
+          div.innerHTML = `<strong>${label}</strong><br>${timeStr}`;
+          container.appendChild(div);
+        });
+      } catch (e) {
+        alert("Fehler beim Laden der Gebetszeiten: " + e.message);
+      }
+    }
+
+    async function fetchTemperature() {
+      try {
+        const res = await fetch("https://wttr.in/Berlin?format=%t");
+        const temp = await res.text();
+        return temp.trim();
+      } catch {
+        return "--°C";
+      }
+    }
+
+    async function updateTemperatureOnly() {
+      document.getElementById("date").textContent = getDateStr() +
+        " - Temperatur: " + await fetchTemperature();
+    }
+
+    function updateClock() {
+      const now = new Date();
+      document.getElementById("clock").textContent = now.toLocaleTimeString();
+
+      let nextIdx = prayerTimes.findIndex(pt => now < pt.time);
+      let next = prayerTimes[nextIdx];
+      if (!next) {
+        nextIdx = 0;
+        next = prayerTimes[0];
+      }
+
+      let diff = (next.time - now) / 1000;
+      if (diff < 0) diff += 86400;
+
+      const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+      const s = String(Math.floor(diff % 60)).padStart(2, '0');
+      document.getElementById("remaining").textContent = `Kalan zaman: ${h}:${m}:${s}`;
+
+      const blocks = document.querySelectorAll(".prayer");
+      blocks.forEach(b => b.classList.remove("active"));
+
+      let currentIdx = -1;
+      for (let i = 0; i < prayerTimes.length; i++) {
+        if (now >= prayerTimes[i].time) {
+          currentIdx = i;
+        } else {
+          break;
+        }
+      }
+      if (currentIdx === -1) currentIdx = prayerTimes.length - 1;
+      blocks[currentIdx]?.classList.add("active");
+    }
+
+    async function updateAll() {
+      await fetchPrayerTimes();
+      await updateTemperatureOnly();
+    }
+
+    async function init() {
+      await updateAll();
+      setInterval(updateClock, 1000);
+      setInterval(updateTemperatureOnly, 10 * 60 * 1000);
+
+      const now = new Date();
+      const nextReload = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 1, 0, 0);
+      const timeout = nextReload - now;
+      setTimeout(function reloadAtMidnight() {
+        updateAll();
+        setInterval(updateAll, 86400000);
+      }, timeout);
+    }
+
+    init();
+  </script>
+</body>
+</html>
