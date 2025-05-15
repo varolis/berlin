@@ -18,17 +18,17 @@
       align-items: center;
     }
     .time {
-      font-size: 12vw;
+      font-size: 14vw;
       margin-bottom: 3vh;
     }
     .remain {
-      font-size: 6vw; /* Verdoppelte Schriftgröße */
+      font-size: 6vw;
       color: yellow;
       margin-top: 3vh;
       margin-bottom: 3vh;
     }
     .date {
-      font-size: 2.5vw;
+      font-size: 5vw;
       margin-top: 3vh;
     }
     .prayer-times {
@@ -43,7 +43,7 @@
       border: 1px solid white;
       padding: 2vw;
       flex-grow: 1;
-      font-size: 3.5vw;
+      font-size: 4vw;
       box-sizing: border-box;
     }
     .active {
@@ -59,9 +59,9 @@
   <div class="date" id="date"></div>
 
   <script>
-    const prayerLabels = ["Imsak", "Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
-    const prayerKeys   = ["Imsak", "GunesDogus", "Ogle", "Ikindi", "Aksam", "Yatsi"];
-    let prayerTimes  = [];
+    const prayerLabels = ["İmsak", "Sabah", "Öğle", "İkindi", "Akşam", "Yatsı"];
+    const prayerKeys = ["Imsak", "Gunes", "Ogle", "Ikindi", "Aksam", "Yatsi"];
+    let prayerTimes = [];
 
     function getDateStr() {
       const d = new Date();
@@ -73,31 +73,58 @@
 
     async function fetchPrayerTimes() {
       prayerTimes = [];
-      const dateStr = getDateStr();
-      try {
-        const res = await fetch("https://raw.githubusercontent.com/varolis/berlin/main/ezan.json");
-        const data = await res.json();
-        const entry = data.find(d => d.MiladiTarihKisa === dateStr);
-        if (!entry) return alert("Keine Daten für heute gefunden.");
 
-        const container = document.getElementById("prayerTimes");
-        container.innerHTML = "";
+      const today = new Date();
+      const todayStr = today.toLocaleDateString("tr-TR"); // e.g. "15.05.2025"
+      const cached = localStorage.getItem("ezanData");
 
-        prayerLabels.forEach((label, i) => {
-          const timeStr = entry[prayerKeys[i]];
-          const [hh, mm] = timeStr.split(":").map(Number);
-          const t = new Date();
-          t.setHours(hh, mm, 0, 0);
-          prayerTimes.push({ label, time: t, str: timeStr });
-
-          const div = document.createElement("div");
-          div.className = "prayer";
-          div.innerHTML = `<strong>${label}</strong><br>${timeStr}`;
-          container.appendChild(div);
-        });
-      } catch (e) {
-        alert("Fehler beim Laden der Daten:", e);
+      if (cached) {
+        try {
+          const cachedObj = JSON.parse(cached);
+          if (cachedObj.date === todayStr) {
+            console.log("Verwende gespeicherte Gebetszeiten aus dem Cache.");
+            return processPrayerTimes(cachedObj.data, todayStr);
+          }
+        } catch (e) {
+          console.warn("Cache konnte nicht gelesen werden, lade neu.");
+        }
       }
+
+      try {
+        const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://ezanvakti.emushaf.net/vakitler/11002"));
+        const raw = await res.json();
+        const data = JSON.parse(raw.contents);
+
+        localStorage.setItem("ezanData", JSON.stringify({
+          date: todayStr,
+          data: data
+        }));
+
+        processPrayerTimes(data, todayStr);
+      } catch (e) {
+        alert("Fehler beim Laden der Gebetszeiten: " + e.message);
+      }
+    }
+
+    function processPrayerTimes(data, dateStr) {
+      const entry = data.find(d => d.MiladiTarihKisa === dateStr);
+      if (!entry) return alert("Keine Daten für heute gefunden.");
+
+      const container = document.getElementById("prayerTimes");
+      container.innerHTML = "";
+
+      prayerLabels.forEach((label, i) => {
+        const timeStr = entry[prayerKeys[i]];
+        const [hh, mm] = timeStr.split(":").map(Number);
+        const t = new Date();
+        t.setHours(hh, mm, 0, 0);
+        prayerTimes.push({ label, time: t, str: timeStr });
+
+        const div = document.createElement("div");
+        div.className = "prayer";
+        div.innerHTML = `<strong>${label}</strong><br>${timeStr}`;
+        container.appendChild(div);
+      });
     }
 
     async function fetchTemperature() {
@@ -119,14 +146,18 @@
       const now = new Date();
       document.getElementById("clock").textContent = now.toLocaleTimeString();
 
+      if (prayerTimes.length === 0) return;
+
       let nextIdx = prayerTimes.findIndex(pt => now < pt.time);
       let next = prayerTimes[nextIdx];
       if (!next) {
         nextIdx = 0;
         next = prayerTimes[0];
       }
+
       let diff = (next.time - now) / 1000;
       if (diff < 0) diff += 86400;
+
       const h = String(Math.floor(diff / 3600)).padStart(2, '0');
       const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
       const s = String(Math.floor(diff % 60)).padStart(2, '0');
@@ -134,6 +165,7 @@
 
       const blocks = document.querySelectorAll(".prayer");
       blocks.forEach(b => b.classList.remove("active"));
+
       let currentIdx = -1;
       for (let i = 0; i < prayerTimes.length; i++) {
         if (now >= prayerTimes[i].time) {
