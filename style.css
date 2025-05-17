@@ -1,0 +1,47 @@
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: black;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.time {
+  font-size: 14vw;
+  margin-bottom: 3vh;
+}
+.remain {
+  font-size: 6vw;
+  color: yellow;
+  margin-top: 3vh;
+  margin-bottom: 3vh;
+}
+.date {
+  font-size: 5vw;
+  margin-top: 3vh;
+}
+.prayer-times {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  gap: 1vw;
+  max-width: 95vw;
+  width: 100%;
+}
+.prayer {
+  border: 1px solid white;
+  padding: 2vw;
+  flex-grow: 1;
+  font-size: 4vw;
+  box-sizing: border-box;
+}
+.active {
+  background-color: green;
+  color: white;
+}
