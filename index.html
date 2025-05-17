@@ -47,11 +47,18 @@
 
   <div id="gearButton" onclick="toggleSettings()">⚙️</div>
 
-  <div id="settingsPanel">
-    <label for="cityId">Sehir-Kodu:</label>
-    <input type="number" id="cityId">
-    <button onclick="saveCityId()">Degistir</button>
-  </div>
+  
+<div id="settingsPanel">
+  <label for="countrySelect">Ülke:</label>
+  <select id="countrySelect" onchange="populateStates()"></select>
+  <label for="stateSelect">Eyalet:</label>
+  <select id="stateSelect" onchange="populateCities()"></select>
+  <label for="citySelect">Şehir:</label>
+  <select id="citySelect"></select>
+  <button onclick="saveSelectedCity()">Değiştir</button>
+</div>
+<div id="selectedCityName" style="position: fixed; bottom: 2vh; left: 2vw; font-size: 2vw;"></div>
+
 
   <script src="gebetszeiten.js"></script>
   <script>
@@ -158,5 +165,115 @@
 
     init();
   </script>
+<script>
+function populateStates() {
+  const country = document.getElementById("countrySelect").value;
+  const stateSelect = document.getElementById("stateSelect");
+  const citySelect = document.getElementById("citySelect");
+  stateSelect.innerHTML = "";
+  citySelect.innerHTML = "";
+  const states = [...new Set(stadtliste.filter(e => e.country === country).map(e => e.state))].sort();
+  states.forEach(state => {
+    const opt = document.createElement("option");
+    opt.value = state;
+    opt.textContent = state;
+    stateSelect.appendChild(opt);
+  });
+  populateCities();
+}
+
+function populateCities() {
+  const country = document.getElementById("countrySelect").value;
+  const state = document.getElementById("stateSelect").value;
+  const citySelect = document.getElementById("citySelect");
+  citySelect.innerHTML = "";
+  stadtliste.filter(e => e.country === country && e.state === state).forEach(city => {
+    const opt = document.createElement("option");
+    opt.value = city.id;
+    opt.textContent = city.city;
+    citySelect.appendChild(opt);
+  });
+}
+
+function saveSelectedCity() {
+  const select = document.getElementById("citySelect");
+  const name = select.options[select.selectedIndex].text;
+  const id = select.value;
+  document.getElementById("selectedCityName").textContent = name;
+  localStorage.setItem("cityId", id);
+  toggleSettings();
+  updateAll();
+}
+
+window.addEventListener("load", () => {
+  const countrySelect = document.getElementById("countrySelect");
+  const countries = [...new Set(stadtliste.map(e => e.country))].sort();
+  countries.forEach(country => {
+    const opt = document.createElement("option");
+    opt.value = country;
+    opt.textContent = country;
+    countrySelect.appendChild(opt);
+  });
+  populateStates();
+});
+</script>
+
+<script>
+let stadtliste = [];
+
+fetch("diyanet_stadtliste.json")
+  .then(res => res.json())
+  .then(data => {
+    stadtliste = data;
+    const countrySelect = document.getElementById("countrySelect");
+    const countries = [...new Set(stadtliste.map(e => e.country))].sort();
+    countries.forEach(country => {
+      const opt = document.createElement("option");
+      opt.value = country;
+      opt.textContent = country;
+      countrySelect.appendChild(opt);
+    });
+    populateStates();
+  });
+
+function populateStates() {
+  const country = document.getElementById("countrySelect").value;
+  const stateSelect = document.getElementById("stateSelect");
+  const citySelect = document.getElementById("citySelect");
+  stateSelect.innerHTML = "";
+  citySelect.innerHTML = "";
+  const states = [...new Set(stadtliste.filter(e => e.country === country).map(e => e.state))].sort();
+  states.forEach(state => {
+    const opt = document.createElement("option");
+    opt.value = state;
+    opt.textContent = state;
+    stateSelect.appendChild(opt);
+  });
+  populateCities();
+}
+
+function populateCities() {
+  const country = document.getElementById("countrySelect").value;
+  const state = document.getElementById("stateSelect").value;
+  const citySelect = document.getElementById("citySelect");
+  citySelect.innerHTML = "";
+  stadtliste.filter(e => e.country === country && e.state === state).forEach(city => {
+    const opt = document.createElement("option");
+    opt.value = city.id;
+    opt.textContent = city.city;
+    citySelect.appendChild(opt);
+  });
+}
+
+function saveSelectedCity() {
+  const select = document.getElementById("citySelect");
+  const name = select.options[select.selectedIndex].text;
+  const id = select.value;
+  document.getElementById("selectedCityName").textContent = name;
+  localStorage.setItem("cityId", id);
+  toggleSettings();
+  updateAll();
+}
+</script>
 </body>
 </html>
