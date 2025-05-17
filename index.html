@@ -4,15 +4,79 @@
   <meta charset="UTF-8">
   <title>Gebetszeiten heute</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    #settingsPanel {
+      position: fixed;
+      bottom: 2vh;
+      right: 2vw;
+      background: rgba(0,0,0,0.9);
+      border: 1px solid white;
+      padding: 1vh 1vw;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      z-index: 100;
+    }
+
+    #gearButton {
+      position: fixed;
+      bottom: 2vh;
+      right: 2vw;
+      font-size: 3vw;
+      cursor: pointer;
+      z-index: 101;
+    }
+
+    #settingsPanel input {
+      font-size: 1.5vw;
+      width: 100px;
+      margin-bottom: 1vh;
+    }
+
+    #settingsPanel button {
+      font-size: 1.5vw;
+    }
+  </style>
 </head>
 <body>
+
   <div class="time" id="clock"></div>
   <div class="prayer-times" id="prayerTimes"></div>
   <div class="remain" id="remaining"></div>
   <div class="date" id="date"></div>
 
+  <div id="gearButton" onclick="toggleSettings()">⚙️</div>
+
+  <div id="settingsPanel">
+    <label for="cityId">Sehir-Kodu:</label>
+    <input type="number" id="cityId">
+    <button onclick="saveCityId()">Degistir</button>
+  </div>
+
   <script src="gebetszeiten.js"></script>
   <script>
+    function toggleSettings() {
+      const panel = document.getElementById("settingsPanel");
+      const gear = document.getElementById("gearButton");
+      if (panel.style.display === "none") {
+        panel.style.display = "flex";
+        gear.style.display = "none";
+        document.getElementById("cityId").value = localStorage.getItem("cityId") || "11002";
+      } else {
+        panel.style.display = "none";
+        gear.style.display = "block";
+      }
+    }
+
+    function saveCityId() {
+      const newId = document.getElementById("cityId").value;
+      if (newId) {
+        localStorage.setItem("cityId", newId);
+        toggleSettings();
+        updateAll();
+      }
+    }
+
     async function fetchTemperature() {
       try {
         const res = await fetch("https://wttr.in/Berlin?format=%t");
@@ -25,7 +89,7 @@
 
     async function updateTemperatureOnly() {
       document.getElementById("date").textContent = getDateStr() +
-        " - Temperatur: " + await fetchTemperature();
+        " - Hava: " + await fetchTemperature();
     }
 
     function updateClock(now) {

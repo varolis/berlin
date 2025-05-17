@@ -11,12 +11,13 @@ function getDateStr() {
 }
 
 async function fetchPrayerTimes() {
+  const cityId = localStorage.getItem("cityId") || "11002";
   prayerTimes = [];
 
   const today = new Date();
   const todayStr = today.toLocaleDateString("tr-TR");
-  const cached = localStorage.getItem("ezanData");
-  const lastFetchStr = localStorage.getItem("ezanLastFetch");
+  const cached = localStorage.getItem("ezanData_" + cityId);
+  const lastFetchStr = localStorage.getItem("ezanLastFetch_" + cityId);
   const now = new Date();
 
   let needsDownload = false;
@@ -36,7 +37,7 @@ async function fetchPrayerTimes() {
         console.log(`Letzter Download vor ${daysSinceLastFetch} Tagen – neuer Versuch in ${Math.floor(randomDelay / 60000)} Minuten.`);
         setTimeout(() => {
           console.log("Führe geplanten Datendownload durch...");
-          fetchAndStorePrayerTimes(todayStr);
+          fetchAndStorePrayerTimes(todayStr, cityId);
         }, randomDelay);
         processPrayerTimes(cachedObj.data, todayStr);
         return;
@@ -53,21 +54,22 @@ async function fetchPrayerTimes() {
   }
 
   if (needsDownload) {
-    await fetchAndStorePrayerTimes(todayStr);
+    await fetchAndStorePrayerTimes(todayStr, cityId);
   }
 }
 
-async function fetchAndStorePrayerTimes(todayStr) {
+async function fetchAndStorePrayerTimes(todayStr, cityId) {
   try {
-    const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("https://ezanvakti.emushaf.net/vakitler/11002"));
+    const url = `https://ezanvakti.emushaf.net/vakitler/${cityId}`;
+    const res = await fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(url));
     const raw = await res.json();
     const data = JSON.parse(raw.contents);
 
-    localStorage.setItem("ezanData", JSON.stringify({
+    localStorage.setItem("ezanData_" + cityId, JSON.stringify({
       date: todayStr,
       data: data
     }));
-    localStorage.setItem("ezanLastFetch", new Date().toISOString());
+    localStorage.setItem("ezanLastFetch_" + cityId, new Date().toISOString());
 
     processPrayerTimes(data, todayStr);
   } catch (e) {
