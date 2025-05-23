@@ -2,7 +2,11 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
+  <!-- Neu: verhindert Auto-Zoom in iOS-Safari -->
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Frame-Layout: zentrierte Mitte</title>
+
   <style>
     html,body{margin:0;height:100%;background:#000;}
     iframe{display:block;border:none}
@@ -10,21 +14,22 @@
     /* Haupt-Container */
     .container{display:flex;flex-direction:column;height:100%;width:100%}
 
-    /* ── OBERER BEREICH ───────────────────────────────── */
+    /* ── OBERER BEREICH ─────────────────────────────── */
     .top-row{display:flex;flex:1 1 0}
 
     .side{
-      flex:1 1 0;          /* wächst & schrumpft gleichmäßig   */
-      min-width:0;         /* darf wirklich schmal werden       */
-      background:#000;
+      flex:0 1 300px;              /* fixe Breite, darf schrumpfen */
+      overflow:hidden;
     }
 
-    /* zentrales 16:9-Widget */
+    /* Mittleres Feld – ZENTRIERT */
     .middle{
-      flex:0 1 auto;       /* wächst nicht, kann schrumpfen     */
-      margin-inline:auto;  /* perfekt zentriert                 */
+      flex:0 1 auto;               /* wächst nicht, kann schrumpfen */
+      margin-inline:auto;          /* perfekt zentriert              */
       display:flex;
       align-items:stretch;
+      /* Neu: verhindert, dass es breiter als der Viewport wird */
+      max-width:100vw;
     }
     .middle iframe{
       aspect-ratio:16/9;
@@ -39,11 +44,11 @@
       height:100%;
       border:0;
       overflow:hidden;     /* Safari etc. */
-      scrollbar-width:none;              /* Firefox */
+      scrollbar-width:none;/* Firefox   */
     }
-    .sideframe::-webkit-scrollbar{display:none;}  /* Chrome, Edge */
+    .sideframe::-webkit-scrollbar{display:none;} /* Chrome, Edge */
 
-    /* ── UNTERER BEREICH (Wetter) ────────────────────── */
+    /* ── UNTERER BEREICH (Wetter) ───────────────────── */
     .bottom-row{
       flex:0 0 300px;
       overflow:hidden;
@@ -54,7 +59,6 @@
 <body>
   <div class="container">
 
-    <!-- OBERSTE Zeile -->
     <div class="top-row">
       <div class="side">
         <iframe src="left.html"  class="sideframe" scrolling="no" title="links"></iframe>
