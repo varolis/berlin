@@ -1,103 +1,82 @@
 <!DOCTYPE html>
 <html lang="de">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Frame-Layout: Schwarz links/rechts &amp; Mitte 16 : 9</title>
+<head>
+  <meta charset="UTF-8" />
+  <title>Frame-Layout: zentrierte Mitte</title>
+  <style>
+    html,body{margin:0;height:100%;background:#000;}
+    iframe{display:block;border:none}
 
-    <style>
-      /* ───────────────────────────┐
-         Global-Basics             │
-         ───────────────────────────┘*/
-      html,
-      body {
-        margin: 0;
-        height: 100%;
-        background: #000;          /* füllt evtl. Restspalten mit Schwarz */
-      }
+    /* Haupt-Container */
+    .container{display:flex;flex-direction:column;height:100%;width:100%}
 
-      iframe {
-        display: block;            /* eliminiert Inline-Whitespace-Lücken  */
-        border: none;
-      }
+    /* ── OBERER BEREICH ───────────────────────────────── */
+    .top-row{display:flex;flex:1 1 0}
 
-      /* ► Flex-Container über die ganze Seite  */
-      .container {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        width: 100%;
-      }
+    .side{
+      flex:1 1 0;          /* wächst & schrumpft gleichmäßig   */
+      min-width:0;         /* darf wirklich schmal werden       */
+      background:#000;
+    }
 
-      /* ───────────────────────────┐
-         OBERER BEREICH (3 Frames) │
-         ───────────────────────────┘*/
-      .top-row {
-        display: flex;
-        flex: 1 1 0;
-        gap: 0;                     /* absolut lückendicht                 */
-      }
+    /* zentrales 16:9-Widget */
+    .middle{
+      flex:0 1 auto;       /* wächst nicht, kann schrumpfen     */
+      margin-inline:auto;  /* perfekt zentriert                 */
+      display:flex;
+      align-items:stretch;
+    }
+    .middle iframe{
+      aspect-ratio:16/9;
+      width:100%;
+      height:auto;
+      max-height:100%;
+    }
 
-      /* links & rechts füllen flexibel auf  */
-      .side {
-        flex: 1 1 0;                /* wachsen UND schrumpfen gleichermaßen */
-        min-width: 0;               /* ← erlaubt echtes Schrumpfen!          */
-        background: #000;           /* Fallback, falls Content leer          */
-      }
+    /* äußere iFrames (NEU) */
+    .sideframe{
+      width:100%;
+      height:100%;
+      border:0;
+      overflow:hidden;     /* Safari etc. */
+      scrollbar-width:none;              /* Firefox */
+    }
+    .sideframe::-webkit-scrollbar{display:none;}  /* Chrome, Edge */
 
-      /* der mittlere 16:9-Frame               */
-      .middle {
-        flex: 0 1 auto;             /* wächst nicht, kann aber schrumpfen   */
-        margin-inline: auto;        /* perfekt zentriert                    */
-        display: flex;
-        align-items: stretch;
-      }
+    /* ── UNTERER BEREICH (Wetter) ────────────────────── */
+    .bottom-row{
+      flex:0 0 300px;
+      overflow:hidden;
+    }
+  </style>
+</head>
 
-      .middle iframe {
-        aspect-ratio: 16 / 9;       /* festes Verhältnis                    */
-        width: 100%;
-        height: auto;
-        max-height: 100%;
-      }
+<body>
+  <div class="container">
 
-      /* ───────────────────────────┐
-         UNTERER BEREICH (Wetter)  │
-         ───────────────────────────┘*/
-      .bottom-row {
-        flex: 0 0 300px;            /* fixe Höhe für Wetter-Widget          */
-        overflow: hidden;           /* nichts soll hinausragen              */
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="container">
-      <!-- ── obere Zeile ─────────────────────────── -->
-      <div class="top-row">
-        <div class="side">
-          <iframe src="left.html" title="linkes Seiten-iFrame"></iframe>
-        </div>
-
-        <div class="middle">
-          <iframe
-            src="ezansaati.html"
-            title="Gebets-/Uhr-Widget"
-          ></iframe>
-        </div>
-
-        <div class="side">
-          <iframe src="right.html" title="rechtes Seiten-iFrame"></iframe>
-        </div>
+    <!-- OBERSTE Zeile -->
+    <div class="top-row">
+      <div class="side">
+        <iframe src="left.html"  class="sideframe" scrolling="no" title="links"></iframe>
       </div>
 
-      <!-- ── untere Zeile (Wetter) ──────────────── -->
-      <div class="bottom-row">
-        <iframe
-          src="wetter-widget.html"
-          scrolling="no"
-          title="Wetter-Widget"
-          style="width: 100%; height: 100%; overflow: hidden"
-        ></iframe>
+      <div class="middle">
+        <iframe src="ezansaati.html" title="Gebets-/Uhr-Widget"></iframe>
+      </div>
+
+      <div class="side">
+        <iframe src="right.html" class="sideframe" scrolling="no" title="rechts"></iframe>
       </div>
     </div>
-  </body>
+
+    <!-- Wetter unten -->
+    <div class="bottom-row">
+      <iframe src="wetter-widget.html"
+              title="Wetter"
+              style="width:100%;height:100%;overflow:hidden"
+              scrolling="no"></iframe>
+    </div>
+
+  </div>
+</body>
 </html>
