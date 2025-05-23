@@ -2,9 +2,10 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8" />
-  <!-- Neu: verhindert Auto-Zoom in iOS-Safari -->
+  <!-- **NEU**: verhindert Auto-Zoom in iOS-Safari -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1, viewport-fit=cover">
+
   <title>Frame-Layout: zentrierte Mitte</title>
 
   <style>
@@ -17,19 +18,20 @@
     /* ── OBERER BEREICH ─────────────────────────────── */
     .top-row{display:flex;flex:1 1 0}
 
+    /* Seiten­spalten: nehmen max. 240 px ein, dürfen schrumpfen */
     .side{
-      flex:0 1 300px;              /* fixe Breite, darf schrumpfen */
-      overflow:hidden;
+      flex:0 1 240px;
+      min-width:0;               /* darf wirklich schmal werden   */
+      background:#000;
     }
 
-    /* Mittleres Feld – ZENTRIERT */
+    /* Mittleres 16:9-Widget – wächst auf den Restplatz */
     .middle{
-      flex:0 1 auto;               /* wächst nicht, kann schrumpfen */
-      margin-inline:auto;          /* perfekt zentriert              */
+      flex:1 1 0;
+      margin-inline:auto;
       display:flex;
       align-items:stretch;
-      /* Neu: verhindert, dass es breiter als der Viewport wird */
-      max-width:100vw;
+      max-width:100vw;           /* nie breiter als Viewport      */
     }
     .middle iframe{
       aspect-ratio:16/9;
@@ -38,20 +40,26 @@
       max-height:100%;
     }
 
-    /* äußere iFrames (NEU) */
+    /* iFrames in den Seiten­spalten */
     .sideframe{
       width:100%;
       height:100%;
-      border:0;
-      overflow:hidden;     /* Safari etc. */
-      scrollbar-width:none;/* Firefox   */
+      overflow:hidden;
+      scrollbar-width:none;
     }
-    .sideframe::-webkit-scrollbar{display:none;} /* Chrome, Edge */
+    .sideframe::-webkit-scrollbar{display:none;}
 
     /* ── UNTERER BEREICH (Wetter) ───────────────────── */
     .bottom-row{
       flex:0 0 300px;
       overflow:hidden;
+    }
+
+    /* **NEU**: unter 900 px Breite Seiten­spalten ausblenden,
+       damit die Mitte 100 % bekommt (iPad Hochformat ≈ 820 px) */
+    @media (max-width:900px){
+      .side{display:none;}
+      .middle{max-width:100%;}
     }
   </style>
 </head>
