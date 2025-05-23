@@ -33,12 +33,13 @@
       align-items:stretch;
       max-width:100vw;           /* nie breiter als Viewport      */
     }
-    .middle iframe{
-      aspect-ratio:16/9;
-      width:100%;
-      height:auto;
-      max-height:100%;
-    }
+	.middle iframe{
+	  /* statt 16 : 9 jetzt 10 : 5 (entspricht 2 : 1) */
+	  aspect-ratio: 2 / 1;
+	  width: 100%;
+	  height: auto;
+	  max-height: 100%;
+	}
 
     /* iFrames in den Seiten­spalten */
     .sideframe{
