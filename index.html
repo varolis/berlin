@@ -2,57 +2,87 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <title>Ezansaati</title>
+    <title>Frame‑Layout: Schwarz links/rechts & Mitte 16:9</title>
     <style>
-      /* Seite füllt das gesamte Viewport */
+      /* Vollflächiges Grundlayout */
       html,
       body {
         margin: 0;
         height: 100%;
       }
 
-      /* Vertikale Aufteilung – Flexbox */
+      /* Zwei Zeilen: oben (3 Spalten) & unten (Wetter) */
       .container {
         display: flex;
         flex-direction: column;
         height: 100%;
       }
 
-      /* Alle iFrames: volle Breite, kein Rahmen */
-      iframe {
+      /* Wetter‑Widget unten – fixe Höhe (30 vh) */
+      .frame-bottom {
+        height: 30vh;          /* bei Bedarf anpassen */
         width: 100%;
         border: none;
       }
 
-      /* Oben ≈ 80 % */
-      .frame-top {
-        flex: 8 0 0; /* 8 von 10 Anteilen */
+      /* Oberer Block jetzt HORIZONTAL (3 iFrames nebeneinander) */
+      .frame-top-wrapper {
+        flex: 1 1 auto;        /* nimmt alle übrige Höhe ein */
+        display: flex;
+        flex-direction: row;
+        width: 100%;
+        overflow: hidden;      /* verhindert Überlauf */
       }
 
-      /* Unten ≈ 20 % */
-      .frame-bottom {
-        flex: 2 0 0; /* 2 von 10 Anteilen */
+      /* Einheitliche iFrame‑Grundregeln */
+      .frame-top-wrapper iframe {
+        height: 100%;          /* volle Höhe ausschöpfen */
+        border: none;
+        display: block;
+      }
+
+      /* Linker & rechter Füll‑iFrame – nur schwarze Fläche */
+      .frame-sub {
+        flex: 1 1 0;           /* erhält restliche Breite */
+        min-width: 0;
+      }
+
+      /* Mittlerer iFrame – hält strikt 16 : 9 */
+      .frame-middle {
+        height: 100%;          /* Höhe = Containerhöhe */
+        aspect-ratio: 16 / 9;  /* daraus ergibt sich Breite */
+        flex: 0 0 auto;        /* fixe Breite, kein Mitwachsen */
       }
     </style>
   </head>
   <body>
     <div class="container">
-      <!-- Ersetze about:blank durch deine gewünschte Quelle -->
-      <iframe class="frame-top" src="ezansaati.html" title="Oberer Bereich"></iframe>
-      <iframe class="frame-bottom" src="wetter-widget.html" title="Unterer Bereich"></iframe>
-    </div>
-  
-<script>
-  // receive city selection from prayer iframe and forward to weather iframe
-  window.addEventListener('message', (e) => {
-    if (e.data && e.data.type === 'setCity') {
-      const weatherFrame = document.querySelector('iframe.frame-bottom');
-      if (weatherFrame && weatherFrame.contentWindow) {
-        weatherFrame.contentWindow.postMessage(e.data, '*');
-      }
-    }
-  });
-</script>
+      <!-- Oberer Bereich: drei nebeneinander liegende iFrames -->
+      <div class="frame-top-wrapper">
+        <!-- Schwarzer Platz links -->
+        <iframe class="frame-sub" scrolling="no" title="Schwarz links"
+                srcdoc="<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:#000}</style></head><body></body></html>"></iframe>
 
-</body>
+        <!-- Inhaltlicher Mittel‑iFrame (16:9) -->
+        <iframe class="frame-middle" src="ezansaati.html" title="Gebetszeiten"></iframe>
+
+        <!-- Schwarzer Platz rechts -->
+        <iframe class="frame-sub" scrolling="no" title="Schwarz rechts"
+                srcdoc="<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:#000}</style></head><body></body></html>"></iframe>
+      </div>
+
+      <!-- Unterer fester iFrame (z.B. Wetter‑Widget) -->
+      <iframe class="frame-bottom" src="wetter-widget.html" title="Wetter"></iframe>
+    </div>
+
+    <script>
+      /* Reicht Stadt‑Auswahl vom Mittelframe ans Wetter‑Widget weiter */
+      window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "setCity") {
+          const weatherFrame = document.querySelector("iframe.frame-bottom");
+          weatherFrame?.contentWindow?.postMessage(e.data, "*");
+        }
+      });
+    </script>
+  </body>
 </html>
