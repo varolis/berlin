@@ -2,87 +2,102 @@
 <html lang="de">
   <head>
     <meta charset="UTF-8" />
-    <title>Frame‑Layout: Schwarz links/rechts & Mitte 16:9</title>
+    <title>Frame-Layout: Schwarz links/rechts &amp; Mitte 16 : 9</title>
+
     <style>
-      /* Vollflächiges Grundlayout */
+      /* ───────────────────────────┐
+         Global-Basics             │
+         ───────────────────────────┘*/
       html,
       body {
         margin: 0;
         height: 100%;
+        background: #000;          /* füllt evtl. Restspalten mit Schwarz */
       }
 
-      /* Zwei Zeilen: oben (3 Spalten) & unten (Wetter) */
+      iframe {
+        display: block;            /* eliminiert Inline-Whitespace-Lücken  */
+        border: none;
+      }
+
+      /* ► Flex-Container über die ganze Seite  */
       .container {
         display: flex;
         flex-direction: column;
         height: 100%;
-      }
-
-      /* Wetter‑Widget unten – fixe Höhe (30 vh) */
-      .frame-bottom {
-        height: 30vh;          /* bei Bedarf anpassen */
         width: 100%;
-        border: none;
       }
 
-      /* Oberer Block jetzt HORIZONTAL (3 iFrames nebeneinander) */
-      .frame-top-wrapper {
-        flex: 1 1 auto;        /* nimmt alle übrige Höhe ein */
+      /* ───────────────────────────┐
+         OBERER BEREICH (3 Frames) │
+         ───────────────────────────┘*/
+      .top-row {
         display: flex;
-        flex-direction: row;
+        flex: 1 1 0;
+        gap: 0;                     /* absolut lückendicht                 */
+      }
+
+      /* links & rechts füllen flexibel auf  */
+      .side {
+        flex: 1 1 0;                /* wachsen UND schrumpfen gleichermaßen */
+        min-width: 0;               /* ← erlaubt echtes Schrumpfen!          */
+        background: #000;           /* Fallback, falls Content leer          */
+      }
+
+      /* der mittlere 16:9-Frame               */
+      .middle {
+        flex: 0 1 auto;             /* wächst nicht, kann aber schrumpfen   */
+        margin-inline: auto;        /* perfekt zentriert                    */
+        display: flex;
+        align-items: stretch;
+      }
+
+      .middle iframe {
+        aspect-ratio: 16 / 9;       /* festes Verhältnis                    */
         width: 100%;
-        overflow: hidden;      /* verhindert Überlauf */
+        height: auto;
+        max-height: 100%;
       }
 
-      /* Einheitliche iFrame‑Grundregeln */
-      .frame-top-wrapper iframe {
-        height: 100%;          /* volle Höhe ausschöpfen */
-        border: none;
-        display: block;
-      }
-
-      /* Linker & rechter Füll‑iFrame – nur schwarze Fläche */
-      .frame-sub {
-        flex: 1 1 0;           /* erhält restliche Breite */
-        min-width: 0;
-      }
-
-      /* Mittlerer iFrame – hält strikt 16 : 9 */
-      .frame-middle {
-        height: 100%;          /* Höhe = Containerhöhe */
-        aspect-ratio: 16 / 9;  /* daraus ergibt sich Breite */
-        flex: 0 0 auto;        /* fixe Breite, kein Mitwachsen */
+      /* ───────────────────────────┐
+         UNTERER BEREICH (Wetter)  │
+         ───────────────────────────┘*/
+      .bottom-row {
+        flex: 0 0 300px;            /* fixe Höhe für Wetter-Widget          */
+        overflow: hidden;           /* nichts soll hinausragen              */
       }
     </style>
   </head>
+
   <body>
     <div class="container">
-      <!-- Oberer Bereich: drei nebeneinander liegende iFrames -->
-      <div class="frame-top-wrapper">
-        <!-- Schwarzer Platz links -->
-        <iframe class="frame-sub" scrolling="no" title="Schwarz links"
-                srcdoc="<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:#000}</style></head><body></body></html>"></iframe>
+      <!-- ── obere Zeile ─────────────────────────── -->
+      <div class="top-row">
+        <div class="side">
+          <iframe src="left.html" title="linkes Seiten-iFrame"></iframe>
+        </div>
 
-        <!-- Inhaltlicher Mittel‑iFrame (16:9) -->
-        <iframe class="frame-middle" src="ezansaati.html" title="Gebetszeiten"></iframe>
+        <div class="middle">
+          <iframe
+            src="ezansaati.html"
+            title="Gebets-/Uhr-Widget"
+          ></iframe>
+        </div>
 
-        <!-- Schwarzer Platz rechts -->
-        <iframe class="frame-sub" scrolling="no" title="Schwarz rechts"
-                srcdoc="<!DOCTYPE html><html><head><style>html,body{margin:0;height:100%;background:#000}</style></head><body></body></html>"></iframe>
+        <div class="side">
+          <iframe src="right.html" title="rechtes Seiten-iFrame"></iframe>
+        </div>
       </div>
 
-      <!-- Unterer fester iFrame (z.B. Wetter‑Widget) -->
-      <iframe class="frame-bottom" src="wetter-widget.html" title="Wetter"></iframe>
+      <!-- ── untere Zeile (Wetter) ──────────────── -->
+      <div class="bottom-row">
+        <iframe
+          src="wetter-widget.html"
+          scrolling="no"
+          title="Wetter-Widget"
+          style="width: 100%; height: 100%; overflow: hidden"
+        ></iframe>
+      </div>
     </div>
-
-    <script>
-      /* Reicht Stadt‑Auswahl vom Mittelframe ans Wetter‑Widget weiter */
-      window.addEventListener("message", (e) => {
-        if (e.data && e.data.type === "setCity") {
-          const weatherFrame = document.querySelector("iframe.frame-bottom");
-          weatherFrame?.contentWindow?.postMessage(e.data, "*");
-        }
-      });
-    </script>
   </body>
 </html>
