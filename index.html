@@ -1,95 +1,58 @@
 <!DOCTYPE html>
 <html lang="de">
-<head>
-  <meta charset="UTF-8" />
-  <!-- **NEU**: verhindert Auto-Zoom in iOS-Safari -->
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Ezansaati</title>
+    <style>
+      /* Seite füllt das gesamte Viewport */
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+      }
 
-  <title>Frame-Layout: zentrierte Mitte</title>
+      /* Vertikale Aufteilung – Flexbox */
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+      }
 
-  <style>
-    html,body{margin:0;height:100%;background:#000;}
-    iframe{display:block;border:none}
+      /* Alle iFrames: volle Breite, kein Rahmen */
+      iframe {
+        width: 100%;
+        border: none;
+      }
 
-    /* Haupt-Container */
-    .container{display:flex;flex-direction:column;height:100%;width:100%}
+      /* Oben ≈ 70 % */
+      .frame-top {
+        flex: 7 0 0; /* 7 von 10 Anteilen */
+      }
 
-    /* ── OBERER BEREICH ─────────────────────────────── */
-    .top-row{display:flex;flex:1 1 0}
-
-    /* Seiten­spalten: nehmen max. 240 px ein, dürfen schrumpfen */
-    .side{
-      flex:0 1 240px;
-      min-width:0;               /* darf wirklich schmal werden   */
-      background:#000;
-    }
-
-    /* Mittleres 16:9-Widget – wächst auf den Restplatz */
-    .middle{
-      flex:1 1 0;
-      margin-inline:auto;
-      display:flex;
-      align-items:stretch;
-      max-width:100vw;           /* nie breiter als Viewport      */
-    }
-	.middle iframe{
-	  /* statt 16 : 9 jetzt 10 : 5 (entspricht 2 : 1) */
-	  aspect-ratio: 2 / 1;
-	  width: 100%;
-	  height: auto;
-	  max-height: 100%;
-	}
-
-    /* iFrames in den Seiten­spalten */
-    .sideframe{
-      width:100%;
-      height:100%;
-      overflow:hidden;
-      scrollbar-width:none;
-    }
-    .sideframe::-webkit-scrollbar{display:none;}
-
-    /* ── UNTERER BEREICH (Wetter) ───────────────────── */
-    .bottom-row{
-      flex:0 0 300px;
-      overflow:hidden;
-    }
-
-    /* **NEU**: unter 900 px Breite Seiten­spalten ausblenden,
-       damit die Mitte 100 % bekommt (iPad Hochformat ≈ 820 px) */
-    @media (max-width:900px){
-      .side{display:none;}
-      .middle{max-width:100%;}
-    }
-  </style>
-</head>
-
-<body>
-  <div class="container">
-
-    <div class="top-row">
-      <div class="side">
-        <iframe src="left.html"  class="sideframe" scrolling="no" title="links"></iframe>
-      </div>
-
-      <div class="middle">
-        <iframe src="ezansaati.html" title="Gebets-/Uhr-Widget"></iframe>
-      </div>
-
-      <div class="side">
-        <iframe src="right.html" class="sideframe" scrolling="no" title="rechts"></iframe>
-      </div>
+      /* Unten ≈ 30 % */
+      .frame-bottom {
+        flex: 3 0 0; /* 3 von 10 Anteilen */
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Ersetze about:blank durch deine gewünschte Quelle -->
+      <iframe class="frame-top" src="ezansaati.html" title="Oberer Bereich"></iframe>
+      <iframe class="frame-bottom" src="wetter-widget.html" title="Unterer Bereich"></iframe>
     </div>
+  
+<script>
+  // receive city selection from prayer iframe and forward to weather iframe
+  window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'setCity') {
+      const weatherFrame = document.querySelector('iframe.frame-bottom');
+      if (weatherFrame && weatherFrame.contentWindow) {
+        weatherFrame.contentWindow.postMessage(e.data, '*');
+      }
+    }
+  });
+</script>
 
-    <!-- Wetter unten -->
-    <div class="bottom-row">
-      <iframe src="wetter-widget.html"
-              title="Wetter"
-              style="width:100%;height:100%;overflow:hidden"
-              scrolling="no"></iframe>
-    </div>
-
-  </div>
 </body>
 </html>
