@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>Hava Durumu Widget</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #1e1e1e;
+      color: #fff;
+      padding: 20px;
+      margin: 0; /* Remove default body margin */
+      width: 100%; /* Ensure body takes full available width within iframe */
+      height: 100%; /* Ensure body takes full available height within iframe */
+      display: flex; /* Use flexbox for main content */
+      flex-direction: column;
+      align-items: center; /* Center items horizontally */
+      justify-content: center; /* Center items vertically if space allows */
+      box-sizing: border-box; /* Include padding in the width */
+      overflow: hidden; /* Hide scrollbars if content slightly overflows */
+    }
+    #currentWeather {
+      margin-bottom: 20px;
+      font-size: 1.5em;
+      text-align: center; /* Center the current weather text */
+    }
+    #forecast {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap; /* Allow items to wrap to next line */
+      justify-content: center; /* Center forecast items */
+      width: 100%; /* Take full available width */
+    }
+    .day {
+      background: #2c2c2c;
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      flex: 1 1 110px; /* Allow items to grow/shrink and have a base width */
+      max-width: 150px; /* Limit max width of each day item */
+      box-sizing: border-box; /* Include padding in the width */
+    }
+
+    /* Media queries for better responsiveness within the widget */
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      #currentWeather {
+        font-size: 1.2em;
+      }
+      .day {
+        font-size: 0.9em;
+        padding: 8px;
+        flex: 1 1 90px; /* Adjust base width for smaller screens */
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="currentWeather">Yükleniyor...</div>
+  <div id="forecast"></div>
+
+  <script>
+    let selectedCity = "Berlin,DE"; // Default city
+
+    window.addEventListener("message", (event) => {
+      // Check the origin for security in a production environment
+      // if (event.origin !== "YOUR_EXPECTED_ORIGIN") return;
+
+      if (event.data?.type === "setCity") {
+        selectedCity = event.data.city;
+        getWeather();
+      }
+    });
+
+    async function getWeather() {
+      // Clear previous forecast
+      document.getElementById("forecast").innerHTML = "";
+      document.getElementById("currentWeather").innerText = "Yükleniyor...";
+
+      const [cityName, countryCode] = selectedCity.split(',').map(s => s.trim());
+
+      try {
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(cityName)}&count=1&language=en&format=json`);
+        const geoData = await geoRes.json();
+
+        if (!geoData.results || geoData.results.length === 0) {
+          document.getElementById("currentWeather").innerText = `Şehir bulunamadı: ${cityName}`;
+          return;
+        }
+
+        const { latitude: lat, longitude: lon } = geoData.results[0];
+
+        const currentRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=auto`);
+        const currentData = await currentRes.json();
+        const temp = Math.round(currentData.current_weather.temperature);
+        document.getElementById("currentWeather").innerText = `${cityName}: ${temp}°C`;
+
+        const forecastRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_min,temperature_2m_max,weathercode&timezone=auto`);
+        const forecastData = await forecastRes.json();
+
+        const daysTr = ['Paz', 'Pzt', 'Salı', 'Çar', 'Per', 'Cum', 'Cmt'];
+        const icons = {
+            0: "☀️", // Clear sky
+            1: "🌤️", // Mainly clear
+            2: "⛅", // Partly cloudy
+            3: "☁️", // Overcast
+            45: "🌫️", // Fog
+            48: "🌫️", // Depositing rime fog
+            51: "🌧️", // Drizzle: Light
+            53: "🌧️", // Drizzle: Moderate
+            55: "🌧️", // Drizzle: Dense intensity
+            56: "🌧️", // Freezing Drizzle: Light
+            57: "🌧️", // Freezing Drizzle: Dense intensity
+            61: "🌧️", // Rain: Light
+            63: "🌧️", // Rain: Moderate
+            65: "🌧️", // Rain: Heavy intensity
+            66: "🌧️", // Freezing Rain: Light
+            67: "🌧️", // Freezing Rain: Heavy intensity
+            71: "🌨️", // Snow fall: Light
+            73: "🌨️", // Snow fall: Moderate
+            75: "🌨️", // Snow fall: Heavy intensity
+            77: "🌨️", // Snow grains
+            80: "🌧️", // Rain showers: Light
+            81: "🌧️", // Rain showers: Moderate
+            82: "🌧️", // Rain showers: Violent
+            85: "🌨️", // Snow showers: Light
+            86: "🌨️", // Snow showers: Heavy
+            95: "⛈️", // Thunderstorm: Slight or moderate
+            96: "⛈️", // Thunderstorm with slight hail
+            99: "⛈️"  // Thunderstorm with heavy hail
+        };
+
+
+        const forecastEl = document.getElementById("forecast");
+        forecastEl.innerHTML = "";
+
+        forecastData.daily.time.forEach((dateStr, i) => {
+          const date = new Date(dateStr);
+          const day = daysTr[date.getDay()];
+          const min = Math.round(forecastData.daily.temperature_2m_min[i]);
+          const max = Math.round(forecastData.daily.temperature_2m_max[i]);
+          const icon = icons[forecastData.daily.weathercode[i]] || "❓"; // Fallback icon
+
+          const dayEl = document.createElement("div");
+          dayEl.classList.add("day");
+          dayEl.innerHTML = `
+            <div>${day}</div>
+            <div>${icon}</div>
+            <div>${min}°C / ${max}°C</div>
+          `;
+          forecastEl.appendChild(dayEl);
+        });
+      } catch (error) {
+        console.error("Hava durumu verisi yüklenirken hata oluştu:", error);
+        document.getElementById("currentWeather").innerText = "Hava durumu bilgisi alınamadı.";
+      }
+    }
+
+    // Initial weather load for default city
+    getWeather();
+  </script>
+</body>
+</html>
