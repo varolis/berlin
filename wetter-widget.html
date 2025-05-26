@@ -1,12 +1,160 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <title>Wetter vor Ort</title>
-</head>
-<body style="background:black">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Responsive Wetter-Widget (Aktuell + 7 Tage)</title>
 
-<div id="id12026d5d348a2" a='{"t":"r","v":"1.2","lang":"de","locs":[],"ssot":"c","sics":"ds","cbkg":"#1976D2","cfnt":"#FFFFFF","codd":"#1E88E5","cont":"#E0E0E0"}'><a href="https://wetterlabs.de/widget/">HTML Wetter Widget für die Webseite von wetterlabs.de</a></div><script async src="https://static1.wetterlabs.de/widgetjs/?id=id12026d5d348a2"></script>
+  <!--  Basis-Styles für die Seite  -->
+  <style>
+    /* Seite füllt das Fenster komplett, keine Ränder */
+    html,body{margin:0;padding:0}
+    body{
+      font-family:system-ui,-apple-system,Arial,sans-serif;
+      background:#f2f4f6;
+    }
+  </style>
+</head>
+<body>
+
+  <!--  1️⃣  Widget-Container  -->
+  <div class="weatherBar"
+       data-city="Berlin"
+       data-lat="52.5208" data-lon="13.4095"
+       style="--widget-font-size:18px;">
+    <noscript>Bitte JavaScript aktivieren, um das Wetter zu sehen.</noscript>
+  </div>
+
+  <!--  2️⃣  Widget-Skript  -->
+  <script>
+  (async () => {
+
+    /* --------------------------------------------------------- *
+     * Einstellungen & Hilfs­objekte                             *
+     * --------------------------------------------------------- */
+    const BAR_SEL = '.weatherBar';
+    const PARAMS  = [
+      'current_weather=true',
+      'daily=temperature_2m_max,temperature_2m_min,weathercode',
+      'timezone=auto',
+      'temperature_unit=celsius'
+    ].join('&');
+
+    /* WMO-Code  → Emoji/Icon (bei Bedarf erweitern) */
+    const CODE = {
+      0:'☀️', 1:'🌤️', 2:'⛅︎', 3:'☁️',
+      45:'🌫️',48:'🌫️',
+      51:'🌦️',53:'🌦️',55:'🌦️',
+      61:'🌧️',63:'🌧️',65:'🌧️',
+      71:'❄️',73:'❄️',75:'❄️',
+      80:'🌦️',81:'🌦️',82:'🌧️',
+      95:'⛈️',96:'⛈️',99:'⛈️'
+    };
+
+    const boxes = document.querySelectorAll(BAR_SEL);
+
+    for (const box of boxes) {
+      const { lat, lon, city } = box.dataset;
+
+      try {
+        /* Daten abrufen */
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&${PARAMS}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(res.statusText);
+        const json = await res.json();
+
+        const now = json.current_weather;
+        const d   = json.daily;
+
+        /* ---------- Markup ins Widget schreiben ---------- */
+        box.innerHTML = `
+          <style>
+            /* Scoped Styles – wirken nur in .weatherBar */
+            ${BAR_SEL}{
+              /* Layout */
+              width:100%;                 /* ► nimmt volle Breite ein  */
+              box-sizing:border-box;
+              display:flex;
+              align-items:center;
+              overflow:hidden;            /* für extrem schmale Bildschirme */
+              padding:0 1.4rem;
+              /* Optik */
+              --bg:#0288d1;               /* Hintergrundfarbe            */
+              --fg:#ffffff;               /* Textfarbe                   */
+              font-size:var(--widget-font-size,16px);
+              font-family:Arial,sans-serif;
+              color:var(--fg);
+              background:var(--bg);
+              box-shadow:0 4px 12px #0003;
+            }
+            /* linker Block: Stadt + aktuell */
+            ${BAR_SEL} .current{
+              display:flex;align-items:center;
+              gap:.8rem;
+              white-space:nowrap;
+              margin-right:.8rem;
+            }
+            ${BAR_SEL} .tempNow{font-size:3.4em;font-weight:700;}
+            ${BAR_SEL} .iconNow{font-size:2.3em;line-height:1;}
+            /* rechter Block: 7-Tage-Spalten */
+            ${BAR_SEL} .forecast{
+              display:flex;
+              flex:1 1 auto;              /* dehnt sich aus              */
+              min-width:0;                /* verhindert Overflow-Bug     */
+            }
+            ${BAR_SEL} .day{
+              flex:1 1 0;                 /* gleiche Breite je Tag       */
+              text-align:center;
+              padding:.75rem .45rem;
+              position:relative;
+            }
+            ${BAR_SEL} .day:not(:last-child)::after{
+              content:'';position:absolute;top:0;right:0;width:1px;height:100%;
+              background:#ffffff22;       /* zarte Trennerlinie          */
+            }
+            ${BAR_SEL} .dow {font-weight:500;margin-bottom:.3rem;letter-spacing:.05em;}
+            ${BAR_SEL} .icon{font-size:1.8em;line-height:1;margin:.2em 0;}
+            ${BAR_SEL} .hi{font-size:1.05em;font-weight:600;line-height:1.1;}
+            ${BAR_SEL} .lo{font-size:.78em;opacity:.8;}
+            /* Info-Link */
+            ${BAR_SEL} .src{
+              position:absolute;top:.45rem;right:.6rem;
+              font-size:.7em;opacity:.5;
+              text-decoration:none;color:var(--fg);
+            }
+          </style>
+
+          <!-- linker Block -->
+          <div class="current">
+            <span class="city">${city ?? ''}</span>
+            <span class="iconNow">${CODE[now.weathercode] ?? ''}</span>
+            <span class="tempNow">${now.temperature.toFixed(0)}°C</span>
+          </div>
+
+          <!-- rechter Block -->
+          <div class="forecast">
+            ${
+              d.time.slice(0,7).map((date,i)=>`
+                <div class="day">
+                  <div class="dow">${new Date(date)
+                     .toLocaleDateString('de-DE',{weekday:'short'})}</div>
+                  <div class="icon">${CODE[d.weathercode[i]] ?? ''}</div>
+                  <div class="hi">${d.temperature_2m_max[i].toFixed(0)}°C</div>
+                  <div class="lo">${d.temperature_2m_min[i].toFixed(0)}°C</div>
+                </div>
+              `).join('')
+            }
+          </div>
+
+          <a class="src" href="https://open-meteo.com" target="_blank" title="Daten: Open-Meteo">ⓘ</a>
+        `;
+      } catch (err) {
+        box.textContent='Wetter konnte nicht geladen werden 😕';
+        console.error(err);
+      }
+    }
+  })();
+  </script>
 
 </body>
 </html>
