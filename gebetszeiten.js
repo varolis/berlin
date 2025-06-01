@@ -14,8 +14,7 @@ async function fetchPrayerTimes() {
   const cityId = localStorage.getItem("cityId") || "11002";
   prayerTimes = [];
 
-  const today = new Date();
-  const todayStr = today.toLocaleDateString("tr-TR");
+  const todayStr = getDateStr(); // <-- WICHTIGE ÄNDERUNG HIER
   const cached = localStorage.getItem("ezanData_" + cityId);
   const lastFetchStr = localStorage.getItem("ezanLastFetch_" + cityId);
   const now = new Date();
@@ -33,10 +32,15 @@ async function fetchPrayerTimes() {
         console.log("Heutiges Datum nicht im Cache – lade neue Daten.");
         needsDownload = true;
       } else if (daysSinceLastFetch >= 21) {
-  console.log(`Letzter Download vor ${daysSinceLastFetch} Tagen – lade neue Daten.`);
-  await fetchAndStorePrayerTimes(todayStr, cityId);
-  return;
-} else {
+        const randomDelay = Math.floor(Math.random() * 12 * 60 * 60 * 1000);
+        console.log(`Letzter Download vor ${daysSinceLastFetch} Tagen – neuer Versuch in ${Math.floor(randomDelay / 60000)} Minuten.`);
+        setTimeout(() => {
+          console.log("Führe geplanten Datendownload durch...");
+          fetchAndStorePrayerTimes(todayStr, cityId);
+        }, randomDelay);
+        processPrayerTimes(cachedObj.data, todayStr);
+        return;
+      } else {
         console.log("Verwende gespeicherte Gebetszeiten aus dem Cache.");
         return processPrayerTimes(cachedObj.data, todayStr);
       }
